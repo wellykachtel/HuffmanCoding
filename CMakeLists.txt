@@ -8,9 +8,11 @@ set(SEVEN_COMMON ${COMMON} src/7coder.cpp)
 # List files for building huff, puff, and huffman_test here, and they will be
 # included in all three:
 set(HUFF_COMMON
-        ${COMMON})
+        ${COMMON} src/huffman.cpp
+        src/huffman.h)
 
 add_program(encode src/encode.cpp ${SEVEN_COMMON})
+add_program(encode2 src/encode2.cpp ${SEVEN_COMMON})
 add_program(decode src/decode.cpp ${SEVEN_COMMON})
 add_program(huff src/huff.cpp ${HUFF_COMMON})
 add_program(puff src/puff.cpp ${HUFF_COMMON})

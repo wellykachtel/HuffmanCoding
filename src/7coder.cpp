@@ -10,6 +10,8 @@ void encode(istream& in, bostream& out)
     while (in.read(&c, 1)) {
         out.write_bits(c, 7);
     }
+
+
 }
 
 void decode(bistream& in, ostream& out)
