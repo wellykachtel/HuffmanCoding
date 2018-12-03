@@ -14,17 +14,9 @@ void huff(istream& in, bostream& out)
         f[c]++;
     }
 
-    std::priority_queue<node,std::vector<node>, cmp> pq;
-
-    for(size_t i = 0; i <f.size();i++){
-        if(f[i]!=0){
-            pq.push({(char)i,f[i]});
-        }
-    }
-
-    HuffTree h(pq);
-
-    h.print_to_file(out);
+    write_freq(out, f);
+    tree ht = tree::from_frequency_table(f);
+    ht.serialize(in,out);
 }
 
 void puff(bistream& in, ostream& out)
@@ -36,61 +28,81 @@ void puff(bistream& in, ostream& out)
     }
 }
 
+tree tree::from_frequency_table(frequency_table & f){
 
-HuffTree::HuffTree(std::priority_queue<node, std::vector<node>, cmp> &pq) {
+    std::priority_queue<link_t ,std::vector<link_t >, cmp> pq;
 
+    for(size_t i = 0; i <f.size();i++){
+        if(f[i]!=0){
+            link_t n = std::make_shared<node_>(node_((char) i,f[i]));
+            pq.push(n);
+        }
+    }
 
+    while(pq.size()!=1) {
+        link_t x = pq.top();
+        pq.pop();
+        link_t y = pq.top();
+        pq.pop();
+
+        link_t new_root = std::make_shared<node_>(node_('\0', x->count + y->count));
+        new_root->left = x;
+        new_root->right = y;
+        pq.push(new_root);
+    }
+    link_t final_root = pq.top();
+    return tree(final_root);
+
+}
+
+int tree::height(link_t root) const{
     if(root == nullptr) {
-        node x = pq.top();
-        link_t first = std::make_shared<node>(x);
-        pq.pop();
-
-        node new_root('\0',x.count);
-        new_root.left = first;
-        new_root.right = nullptr;
-        root = std::make_shared<node>(new_root);
-        size = 1;
+        return 0;
     }
 
-    while(!pq.empty()) {
-        node z = pq.top();
-        link_t new_child = std::make_shared<node>(z);
-        pq.pop();
-
-        node new_root('\0', root->count + z.count);
-        new_root.left = new_child;
-        new_root.right = root;
-        root = std::make_shared<node>(new_root);
-        ++size;
-    }
-    cout<<"\nSize of tree - no of characters in tree"<<size;
-    cout<<"\nFrequency total"<<root->count<<endl;
-
-
+    return max(height(root->left), height(root->right)) + 1;
 }
 
-void HuffTree::print_bits(char input){
+void tree::serialize(std::istream& in, ipd::bostream & out) const {
 
-    link_t traverse = root;
+    std::map<char,std::vector<bool>> code_table;
+    code_table = traverse_tree(code_table);
 
-    while(traverse->left->c != input){
-        cout<<"1";
-        traverse = traverse->right;
+    char c;
+    while(in.read(&c,8)){
+        std::vector<bool> x = code_table.at(c);
+
+        for(size_t i = 0; i < x.size(); ++i) {
+            out.write_bits(x[i], 1);
+        }
     }
-    cout<<"0"<<endl;
-
 }
 
 
-void HuffTree::print_to_file(bostream& out) {
-    link_t traverse = root;
-
-
-    out.write_bits(size,32);
-
-    while(traverse != nullptr) {
-        std::cout << traverse->left->c;
-        out.write_bits(traverse->left->c, 8);
-        traverse = traverse->right;
-    }
+std::map<char, std::vector<bool>> tree::traverse_tree (std::map<char, std::vector<bool>> m) const {
+   std::vector<bool> v;
+   traverse_inside(root_, m, v);
+   return m;
 }
+
+void tree::traverse_inside(tree::link_t const node, std::map<char, std::vector<bool>>& m, std::vector<bool> v) {
+    if(node->left->c!='\0') {
+        v.push_back(false);
+        traverse_inside(node->left, m, v);
+    }
+    if(node->right->c!='\0') {
+        v.push_back(true);
+        traverse_inside(node->right, m, v);
+    }
+
+    if(node->left == nullptr and node->right == nullptr){
+        m.insert({node->c, v});
+    }
+
+    if(node->c!='\0'){
+        m.insert({node->c,v});
+    };
+
+}
+
+

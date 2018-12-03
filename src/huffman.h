@@ -7,8 +7,7 @@
 #include<vector>
 #include<limits>
 #include<queue>
-
-
+#include<map>
 
 class frequency_table{
 
@@ -42,53 +41,83 @@ private:
     }
 };
 
+class tree
+{
+public:
+    // Builds a Huffman tree from a frequency table.
+    static tree from_frequency_table(frequency_table &);
+
+    // Reads a Huffman tree from a file.
+    static tree deserialize(ipd::bistream&);
+
+     //Encodes text using Huffmantree and writes to a file.
+     void serialize(std::istream&, ipd::bostream&) const;
+
+    std::map<char,std::vector<bool>> traverse_tree(std::map<char,std::vector<bool>>) const;
+
+     // Decodes one symbol (char) from the given bit in stream.
+     char decode_symbol(ipd::bistream&) const;
+
+    // Writes a Huffman tree to an output stream in a format suitable for
+    // debugging.
+    void format(std::ostream&) const;
+
+    // Compares two Huffman trees for equality. Ignores frequencies and just
+    // compares structure and leaf symbols.
+    // bool operator==(const tree&) const;
+
+private:
+    struct node_;
+    using link_t = std::shared_ptr<node_>;
+
+    std::shared_ptr<node_> root_;
+
+    // private constructor:
+    explicit tree(link_t root);
+    int height(link_t) const;
+
+    struct cmp;
+
+    static void traverse_inside(link_t const, std::map<char,std::vector<bool>> &, std::vector<bool>);
+
+};
+
+struct tree::node_{
+    node_(char c, size_t count) : c(c),count(count), left(nullptr), right(nullptr){ }
+
+    char c;
+    size_t count;
+    std::shared_ptr<node_> left;
+    std::shared_ptr<node_> right;
+};
+
+struct tree::cmp{
+
+    bool operator()(link_t a, link_t b){
+        return a->count > b->count;
+    }
+
+};
+
+tree::tree(tree::link_t root) {
+    root_ = root;
+}
+
 
 // Encodes the ASCII input stream from `in` onto `out`.
 void huff(std::istream& in, ipd::bostream& out);
 
+
 // Decodes the 7-bit-packed input stream from `in` onto `out`.
 void puff(ipd::bistream& in, std::ostream& out);
 
+void printvec(std::vector<bool> &v);
 
 
-struct node {
-    node(char c, size_t count) : c(c),count(count), left(nullptr), right(nullptr){ }
+void write_freq(ipd::bostream & bos, frequency_table f){
 
-    char c;
-    size_t count;
-    std::shared_ptr<node> left;
-    std::shared_ptr<node> right;
-};
-
-using link_t = std::shared_ptr<node>;
-
-
-struct cmp{
-
-    bool operator()(node a, node b){
-        return a.count > b.count;
+    for(size_t i = 0; i < f.size(); i++){
+        bos.write_bits(f[i],sizeof(size_t) * 8);
     }
-
-};
-
-class HuffTree{
-
-public:
-    explicit  HuffTree() : root(nullptr), size(0) { }
-
-    explicit HuffTree(std::priority_queue<node,std::vector<node>, cmp> &pq);
-
-    void print_bits(char);
-    void print_to_file(ipd::bostream& out);
-
-    size_t get_size(){
-        return size;
-    }
-
-private:
-    std::shared_ptr<node> root;
-    size_t size;
-
-};
-
+}
 
