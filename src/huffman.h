@@ -99,9 +99,6 @@ struct tree::cmp{
 
 };
 
-tree::tree(tree::link_t root) {
-    root_ = root;
-}
 
 
 // Encodes the ASCII input stream from `in` onto `out`.
@@ -114,10 +111,5 @@ void puff(ipd::bistream& in, std::ostream& out);
 void printvec(std::vector<bool> &v);
 
 
-void write_freq(ipd::bostream & bos, frequency_table f){
-
-    for(size_t i = 0; i < f.size(); i++){
-        bos.write_bits(f[i],sizeof(size_t) * 8);
-    }
-}
+void write_freq(ipd::bostream & bos, frequency_table f);
 
