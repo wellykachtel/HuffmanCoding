@@ -70,8 +70,10 @@ int tree::height(link_t root) const{
 
 void tree::serialize(istream& in, ipd::bostream & out) const {
 
-    in.clear();
-    in.seekg(0, ios::beg);
+    if(!in){
+        in.clear();
+        in.seekg(0,ios_base::beg);
+    }
     std::map<char,std::vector<bool>> code_table;
     code_table = traverse_tree(code_table);
 
@@ -82,8 +84,10 @@ void tree::serialize(istream& in, ipd::bostream & out) const {
         std::vector<bool> x = code_table.at(c);
 
         for(size_t i = 0; i < x.size(); ++i) {
-            out.write_bits(x[i], sizeof(bool));
+            out.write_bits(x[i], sizeof(x[i])*8);
+            std::cout<<x[i];
         }
+        std::cout<<endl;
     }
 }
 
@@ -91,7 +95,7 @@ void tree::serialize(istream& in, ipd::bostream & out) const {
 std::map<char, std::vector<bool>> tree::traverse_tree (std::map<char, std::vector<bool>> m) const {
    std::vector<bool> v;
    traverse_inside(root_, m, v);
-   /*
+
    auto iter = m.begin();
    for(iter; iter != m.end(); ++iter) {
        std::cout << iter->first << ":";
@@ -100,7 +104,6 @@ std::map<char, std::vector<bool>> tree::traverse_tree (std::map<char, std::vecto
            std::cout<< q.at(i);
        }
    }
-   */
    return m;
 }
 
@@ -142,15 +145,11 @@ tree tree::deserialize(ipd::bistream & in) {
 char tree::decode_symbol(ipd::bistream & in) const {
     bool value;
     link_t travel = root_;
-    while(!in.eof()) {
-        while (travel->left != nullptr and travel->right != nullptr) {
-            in.read_bits(value, 1);
+    while(!in.eof()){
 
-            if (value == true) {
-                travel = travel->right;
-            } else {
-                travel = travel->left;
-            }
+        while (travel->left != nullptr and travel->right != nullptr) {
+            in.read_bits(value, sizeof(bool));
+            travel = value ? travel->right : travel->left;
         }
 
         std::cout << travel->c << endl;
