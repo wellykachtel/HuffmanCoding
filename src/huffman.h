@@ -35,6 +35,7 @@ private:
 
     std::array<size_t, nsymbols> counts_{};
 
+
     static size_t c2i_(char c)
     {
         return (size_t)(unsigned char) c;
@@ -71,6 +72,7 @@ private:
     using link_t = std::shared_ptr<node_>;
 
     std::shared_ptr<node_> root_;
+    size_t count_;
 
     // private constructor:
     explicit tree(link_t root);

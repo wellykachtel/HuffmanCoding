@@ -21,7 +21,10 @@ void huff(istream& in, bostream& out)
 
 void puff(bistream& in, ostream& out) {
     tree ht = tree::deserialize(in);
-    ht.decode_symbol(in);
+
+    char c = ht.decode_symbol(in);
+
+
 
 }
 
@@ -60,20 +63,13 @@ tree tree::from_frequency_table(frequency_table & f){
 
 }
 
-int tree::height(link_t root) const{
-    if(root == nullptr) {
-        return 0;
-    }
-
-    return max(height(root->left), height(root->right)) + 1;
-}
-
 void tree::serialize(istream& in, ipd::bostream & out) const {
 
     if(!in){
         in.clear();
         in.seekg(0,ios_base::beg);
     }
+
     std::map<char,std::vector<bool>> code_table;
     code_table = traverse_tree(code_table);
 
@@ -84,7 +80,7 @@ void tree::serialize(istream& in, ipd::bostream & out) const {
         std::vector<bool> x = code_table.at(c);
 
         for(size_t i = 0; i < x.size(); ++i) {
-            out.write_bits(x[i], sizeof(x[i])*8);
+            out<<x[i];
             std::cout<<x[i];
         }
         std::cout<<endl;
@@ -96,6 +92,7 @@ std::map<char, std::vector<bool>> tree::traverse_tree (std::map<char, std::vecto
    std::vector<bool> v;
    traverse_inside(root_, m, v);
 
+   /*
    auto iter = m.begin();
    for(iter; iter != m.end(); ++iter) {
        std::cout << iter->first << ":";
@@ -104,6 +101,7 @@ std::map<char, std::vector<bool>> tree::traverse_tree (std::map<char, std::vecto
            std::cout<< q.at(i);
        }
    }
+   */
    return m;
 }
 
@@ -145,16 +143,46 @@ tree tree::deserialize(ipd::bistream & in) {
 char tree::decode_symbol(ipd::bistream & in) const {
     bool value;
     link_t travel = root_;
-    while(!in.eof()){
+    int i_enter1 = 0;
+    int i_enter2 = 0;
+    int counter = 6;
+    while(counter) {
 
         while (travel->left != nullptr and travel->right != nullptr) {
-            in.read_bits(value, sizeof(bool));
-            travel = value ? travel->right : travel->left;
+            in >> value;
+            std::cout<<value;
+            if(value == true){
+                travel = travel->right;
+            }
+            else if (value == false){
+                travel = travel->left;
+            }
         }
 
-        std::cout << travel->c << endl;
+        std::cout<<travel->c; //printing out each character once it reaches the leaf;
+        travel = root_;
+        counter--; //resets travel to root for next character.
     }
-    return travel->c;
+
+    link_t test = root_;
+
+    std::cout<<"\nTrying to see tree\n";
+    std::cout<<test->left->c;
+    if(test->right !=nullptr){
+        std::cout<<test->right->c;
+        std::cout<<endl;
+    }
+    if(test->right->right !=nullptr){
+        std::cout<<test->right->right->c;
+        std::cout<<endl;
+    }
+    if(test->right->left != nullptr){
+        std::cout<<test->right->left->c;
+        std::cout<<endl;
+    }
+
+
+    return travel->c; //returns the last character, to be updated post testing
 }
 
 
