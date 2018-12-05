@@ -1,8 +1,8 @@
 #include "common.h"
 #include "huffman.h"
 
-#define DEFAULT_INFILE  "test-files/hamlet-ascii.txt"
-#define DEFAULT_OUTFILE "test-files/hamlet-ascii.txt.huff"
+#define DEFAULT_INFILE  "test-files/empty.txt"
+#define DEFAULT_OUTFILE "test-files/empty.txt.huff"
 
 int main(int argc, const char* argv[])
 {

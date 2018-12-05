@@ -22,18 +22,27 @@ void huff(istream& in, bostream& out)
 void puff(bistream& in, ostream& out) {
     tree ht = tree::deserialize(in);
 
-    char c = ht.decode_symbol(in);
+    size_t counter = 0;
+    in.read_bits(counter, sizeof(size_t) * 8);
 
+    while(counter) {
+        out << ht.decode_symbol(in);
+        counter--;
+    }
 
 
 }
 
 void write_freq(ipd::bostream &bos, frequency_table f) {
 
+
+    size_t total_frequency = 0;
     for(size_t i = 0; i < f.size(); i++){
         bos.write_bits(f[i],sizeof(size_t) * 8);
+        total_frequency += f[i];
     }
 
+    bos.write_bits(total_frequency, sizeof(size_t)*8);
 }
 
 tree tree::from_frequency_table(frequency_table & f){
@@ -47,7 +56,7 @@ tree tree::from_frequency_table(frequency_table & f){
         }
     }
 
-    while(pq.size()!=1) {
+    while(pq.size() > 1) {
         link_t x = pq.top();
         pq.pop();
         link_t y = pq.top();
@@ -58,12 +67,17 @@ tree tree::from_frequency_table(frequency_table & f){
         new_root->right = y;
         pq.push(new_root);
     }
+
+    if(!pq.size()){
+        throw std::logic_error("File is empty");
+    }
+
     link_t final_root = pq.top();
     return tree(final_root);
 
 }
 
-void tree::serialize(istream& in, ipd::bostream & out) const {
+void tree::serialize(istream & in, ipd::bostream & out) const {
 
     if(!in){
         in.clear();
@@ -76,14 +90,13 @@ void tree::serialize(istream& in, ipd::bostream & out) const {
     ipd::bistream_adaptor bis(in);
     char c;
 
+
     while(bis.read_bits(c,8)){
         std::vector<bool> x = code_table.at(c);
 
         for(size_t i = 0; i < x.size(); ++i) {
-            out<<x[i];
-            std::cout<<x[i];
+            out.write(x[i]);
         }
-        std::cout<<endl;
     }
 }
 
@@ -131,7 +144,7 @@ tree::tree(tree::link_t root) {
 
 tree tree::deserialize(ipd::bistream & in) {
     frequency_table f;
-    for(int i = 0; i < 256; ++i) {
+    for (int i = 0; i < 256; ++i) {
         size_t count;
         in.read_bits(count, sizeof(size_t) * 8);
         f[i] = count;
@@ -145,44 +158,20 @@ char tree::decode_symbol(ipd::bistream & in) const {
     link_t travel = root_;
     int i_enter1 = 0;
     int i_enter2 = 0;
-    int counter = 6;
-    while(counter) {
 
-        while (travel->left != nullptr and travel->right != nullptr) {
-            in >> value;
-            std::cout<<value;
-            if(value == true){
-                travel = travel->right;
-            }
-            else if (value == false){
-                travel = travel->left;
-            }
+
+    while (travel->left != nullptr and travel->right != nullptr) {
+        in.read_bits(value, 1);
+        if(value == true){
+            travel = travel->right;
         }
-
-        std::cout<<travel->c; //printing out each character once it reaches the leaf;
-        travel = root_;
-        counter--; //resets travel to root for next character.
+        else if (value == false){
+            travel = travel->left;
+        }
     }
 
-    link_t test = root_;
+    return travel->c;
 
-    std::cout<<"\nTrying to see tree\n";
-    std::cout<<test->left->c;
-    if(test->right !=nullptr){
-        std::cout<<test->right->c;
-        std::cout<<endl;
-    }
-    if(test->right->right !=nullptr){
-        std::cout<<test->right->right->c;
-        std::cout<<endl;
-    }
-    if(test->right->left != nullptr){
-        std::cout<<test->right->left->c;
-        std::cout<<endl;
-    }
-
-
-    return travel->c; //returns the last character, to be updated post testing
 }
 
 

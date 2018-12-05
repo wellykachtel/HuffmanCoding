@@ -6,3 +6,5 @@ cmake-build-*
 # CLion configuration
 .idea/workspace.xml
 .idea/
+
+test-files/
